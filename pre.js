@@ -2,15 +2,21 @@ var Module = {};
 var is_browser = (typeof(self) !== "undefined" || typeof(window) !== "undefined");
 
 if(is_browser) {
-  Module['print'] = function(a) { self['postMessage'](JSON.stringify({'command': 'stdout', 'contents': a})); }
-  Module['printErr'] = function(a) { self['postMessage'](JSON.stringify({'command': 'stderr', 'contents': a})); }
+  // Module['print'] = function(a) { self['postMessage'](JSON.stringify({'command': 'stdout', 'contents': a})); }
+  // Module['printErr'] = function(a) { self['postMessage'](JSON.stringify({'command': 'stderr', 'contents': a})); }
 }
 
 
 Module['preInit'] = function() {
+  FS.init();
   FS.mkdir('/bin');
-  FS.mount(IDBFS, {}, '/bin');
-  self['postMessage'](JSON.stringify({'command': 'File system emulated'}));
+  FS.mount(MEMFS, {}, '/bin');
+  FS.createDataFile('/bin','this.program', '', true, true);
+  FS.chdir('/bin');
+  FS.createDataFile('/bin', 'texmf.cnf', 'TEXMFLOCAL = $SELFAUTOPARENT/texmf-local\nTEXMFVAR = /home/manuel/Projekte/pdftex.js-1.40.11/home/texmf-var', true, true);
+  FS.createDataFile('/bin', 'plain.mp', 'string base_name, base_version; base_name="plain"; base_version="1.004";\nmessage "Preloading the plain mem file, version "&base_version;', true, true);
+  FS.createDataFile('/bin', 'hello.mp', 'pair A, B, C;\nA:=(0,0); B:=(1cm,0); C:=(0,1cm);\ndraw A--B--C;', true, true);
+  Module.arguments = ['hello'];
   Module['FS_root'] = function() {
     return FS.root.contents;
   }
@@ -36,11 +42,11 @@ var FS_createLazyFilesFromList = function(msg_id, parent, list, parent_url, canR
           Module['FS_createLazyFile'](parent+path, filename, parent_url+path+'/'+filename, canRead, canWrite);
     }
 
-    self['postMessage'](JSON.stringify({
-      'command': 'result',
-      'result': 0,
-      'msg_id': msg_id,
-    }));
+    // self['postMessage'](JSON.stringify({
+    //   'command': 'result',
+    //   'result': 0,
+    //   'msg_id': msg_id,
+    // }));
   };
 
   xhr.send();
@@ -67,16 +73,16 @@ self['onmessage'] = function(ev) {
   switch(cmd) {
     case 'run':
       shouldRunNow = true;
-      preparePRNG();
+    //   preparePRNG();
 
       try {
         res = Module['run'](args);
       }
       catch(e) {
-        self['postMessage'](JSON.stringify({'msg_id': data['msg_id'], 'command': 'error', 'message': e.toString()}));
+        // self['postMessage'](JSON.stringify({'msg_id': data['msg_id'], 'command': 'error', 'message': e.toString()}));
         return;
       }
-      self['postMessage'](JSON.stringify({'msg_id': data['msg_id'], 'command': 'success', 'result': res}));
+    //   self['postMessage'](JSON.stringify({'msg_id': data['msg_id'], 'command': 'success', 'result': res}));
       res = undefined;
     break;
 
@@ -114,10 +120,10 @@ self['onmessage'] = function(ev) {
     break;
   }
 
-  if(typeof(res) !== 'undefined')
-    self['postMessage'](JSON.stringify({
-      'command': 'result',
-      'result': res,
-      'msg_id': data['msg_id'],
-    }));
+  // if(typeof(res) !== 'undefined')
+  //   self['postMessage'](JSON.stringify({
+  //     'command': 'result',
+  //     'result': res,
+  //     'msg_id': data['msg_id'],
+  //   }));
 };
